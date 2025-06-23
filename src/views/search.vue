@@ -73,23 +73,19 @@
 
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-// Reaktive Variablen
 const stadt  = ref('')
 const wetter = ref(null)
 const daily  = ref([])
 const error  = ref('')
 
-// Dein OpenWeatherMap Free API-Key
 const apiKey = '8198635183eda125f7fe682e16be92d1'
 
-// Hilfsfunktionen
 const iconUrl = icon => `https://openweathermap.org/img/wn/${icon}@2x.png`
 const getWeekday = dt => new Date(dt * 1000)
   .toLocaleDateString('de-CH', { weekday: 'short' })
 
-// Wetter abrufen (current + 5-Tage/3-Stunden-Forecast)
 const wetterHolen = async () => {
   error.value = ''
   wetter.value = null
@@ -101,7 +97,6 @@ const wetterHolen = async () => {
   }
 
   try {
-    // 1) aktuelles Wetter
     const resNow = await fetch(
       `https://api.openweathermap.org/data/2.5/weather`
       + `?q=${encodeURIComponent(stadt.value)}`
@@ -110,8 +105,8 @@ const wetterHolen = async () => {
     if (!resNow.ok) throw new Error('Stadt nicht gefunden')
     const dataNow = await resNow.json()
     wetter.value = dataNow
+    localStorage.setItem('lastWeather', JSON.stringify(dataNow))
 
-    // 2) 5-Tage/3-Stunden-Forecast
     const resFc = await fetch(
       `https://api.openweathermap.org/data/2.5/forecast`
       + `?q=${encodeURIComponent(stadt.value)}`
@@ -120,7 +115,6 @@ const wetterHolen = async () => {
     if (!resFc.ok) throw new Error('Forecast nicht verfügbar')
     const dataFc = await resFc.json()
 
-    // Gruppiere per Datum und finde min/max
     const mapDays = {}
     dataFc.list.forEach(entry => {
       const [dateStr] = entry.dt_txt.split(' ')
@@ -137,12 +131,25 @@ const wetterHolen = async () => {
       }
     })
 
-    // Nimm die ersten 5 Tage (inkl. heute)
     daily.value = Object.values(mapDays).slice(0, 5)
+    localStorage.setItem('lastDaily', JSON.stringify(daily.value))
+
   } catch (e) {
     error.value = e.message
   }
 }
+
+onMounted(() => {
+  const savedWeather = localStorage.getItem('lastWeather')
+  if (savedWeather) {
+    wetter.value = JSON.parse(savedWeather)
+  }
+
+  const savedDaily = localStorage.getItem('lastDaily')
+  if (savedDaily) {
+    daily.value = JSON.parse(savedDaily)
+  }
+})
 </script>
 
 <style scoped>
