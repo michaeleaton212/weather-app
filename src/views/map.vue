@@ -16,7 +16,7 @@
 
     <main class="content-wrapper">
       <section class="map-widget glass-card">
-        <h2 class="widget-title">Wetterkarte</h2>
+        <h2 class="widget-title">Temparaturkarte</h2>
         <div id="karte" class="actual-map"></div>
         <p class="map-info">
           Interaktive Karte mit Temperaturdaten. Zoome und bewege die Karte, um Details zu entdecken.

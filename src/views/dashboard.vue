@@ -1,9 +1,11 @@
 <template>
   <div class="dashboard-wrapper">
     <nav class="navbar glass">
-      <div class="nav-left">
-        <img src="@/assets/swissflag.png" alt="Swiss Flag" class="flag">
-        <span class="name">Swiss Weather</span>
+      <div class="nav-left flex items-center">
+        <span class="name mr-2">Swiss Weather</span>
+        <div class="relative inline-flex items-center justify-center p-2 cursor-pointer rounded-md ml-2">
+          <img src="@/assets/swissflag.png" alt="Swiss Flag" class="flag" />
+        </div>
       </div>
       <div class="tabs">
         <router-link to="/dashboard" class="tab" active-class="router-link-exact-active">
@@ -19,13 +21,10 @@
     </nav>
 
     <main>
+      <div v-if="error" class="error-wrapper">
+        <div class="error">{{ error }}</div>
+      </div>
 
-      <!-- Fehlermeldung -->
-<div v-if="error" class="error-wrapper">
-  <div class="error">{{ error }}</div>
-</div>
-
-      <!-- Aktuelles Wetter -->
       <div class="widget current-weather-widget glass" v-if="current">
         <h2>Aktuelles Wetter</h2>
         <div class="temp">{{ Math.round(current.main.temp) }}°C</div>
@@ -33,17 +32,12 @@
         <div class="location">{{ locationName }}</div>
       </div>
 
-      <!-- Wochenübersicht (jeweils Tages-Max/Min über Forecast berechnet) -->
       <div class="widget weekly-forecast-widget glass" v-if="daily.length > 0">
         <h2>Wochenübersicht</h2>
         <div class="week-forecast">
-          <div
-            class="day-forecast"
-            v-for="(day, i) in daily"
-            :key="i"
-          >
+          <div class="day-forecast" v-for="(day, i) in daily" :key="i">
             <span class="day">{{ getWeekday(day.dt) }}</span>
-            <img :src="getIconUrl(day.weather.icon)" alt="Icon" class="icon">
+            <img :src="getIconUrl(day.weather.icon)" alt="Icon" class="icon" />
             <span class="temp-range">
               {{ Math.round(day.max) }}°C / {{ Math.round(day.min) }}°C
             </span>
@@ -51,51 +45,32 @@
         </div>
       </div>
 
-      <!-- Sonnenauf- und -untergang (aus Current Data) -->
       <div class="widget sun-times-widget glass" v-if="current">
         <h2>Sonne</h2>
-        <div class="sun-time"> {{ formatTime(current.sys.sunrise) }}</div>
-        <div class="sun-time"> {{ formatTime(current.sys.sunset) }}</div>
+        <div class="sun-time">{{ formatTime(current.sys.sunrise) }}</div>
+        <div class="sun-time">{{ formatTime(current.sys.sunset) }}</div>
       </div>
 
+      <div class="widget wind-widget glass" v-if="current">
+        <h2>Wind</h2>
+        <div class="detail-item">
+          <span>Wind:</span>
+          <span>
+            {{ Math.round(current.wind.speed * 3.6) }} km/h
+            {{ getWindDir(current.wind.deg) }}
+          </span>
+        </div>
+      </div>
 
-      <!-- Wind & Luftfeuchtigkeit -->
-  <!-- Wind Widget -->
-<div class="widget wind-widget glass" v-if="current">
-  <h2>Wind</h2>
-  <div class="detail-item">
-    <span>Wind:</span>
-    <span>
-      {{ Math.round(current.wind.speed * 3.6) }} km/h
-      {{ getWindDir(current.wind.deg) }}
-    </span>
-  </div>
-</div>
+      <div class="widget Luftfeuchtigkeits-widget glass" v-if="current">
+        <h2>Luftfeuchtigkeit</h2>
+        <div class="detail-item">
+          <span>Luftfeuchtigkeit:</span>
+          <span>{{ current.main.humidity }} %</span>
+        </div>
+      </div>
 
-<!-- Humidity Widget -->
-<div class="widget Luftfeuchtigkeits-widget glass" v-if="current">
-  <h2>Luftfeuchtigkeit</h2>
-  <div class="detail-item">
-    <span>Luftfeuchtigkeit:</span>
-    <span>{{ current.main.humidity }} %</span>
-  </div>
-</div>
-<<<<<<< HEAD
-<!-- Luftdruck Widget -->
-<!-- 
-=======
->>>>>>> 1020909434d80831f17b31124e7ed4ba956202a3
-Luftdruck Widget
-<div class="widget luftdruck-widget glass" v-if="current">
-  <h2>Luftdruck</h2>
-  <div class="detail-item">
-    <span>Luftdruck:</span>
-    <span>{{ current.main.pressure }} hPa</span>
-  </div>
-</div>
--->
-
-    </main>
+      </main>
   </div>
 </template>
 
@@ -172,40 +147,40 @@ onMounted(() => {
         const dataFore = await resFore.json()
 
         // aus den 3h-Daten Tages-Max/Min extrahieren
- const tagMap: Record<string, { dt: number; max: number; min: number; weather: { icon: string }; latestHour: number }> = {}
+        const tagMap: Record<string, { dt: number; max: number; min: number; weather: { icon: string }; latestHour: number }> = {}
 
-dataFore.list.forEach((item: any) => {
-  const key = new Date(item.dt * 1000).toISOString().slice(0, 10)
-  const hour = new Date(item.dt * 1000).getHours()
+        dataFore.list.forEach((item: any) => {
+          const key = new Date(item.dt * 1000).toISOString().slice(0, 10)
+          const hour = new Date(item.dt * 1000).getHours()
 
-  if (!tagMap[key]) {
-    tagMap[key] = {
-      dt: item.dt,
-      max: item.main.temp,
-      min: item.main.temp,
-      weather: { icon: item.weather[0].icon },
-      latestHour: hour
-    }
-  } else {
-    tagMap[key].max = Math.max(tagMap[key].max, item.main.temp)
-    tagMap[key].min = Math.min(tagMap[key].min, item.main.temp)
+          if (!tagMap[key]) {
+            tagMap[key] = {
+              dt: item.dt,
+              max: item.main.temp,
+              min: item.main.temp,
+              weather: { icon: item.weather[0].icon },
+              latestHour: hour
+            }
+          } else {
+            tagMap[key].max = Math.max(tagMap[key].max, item.main.temp)
+            tagMap[key].min = Math.min(tagMap[key].min, item.main.temp)
 
-    // Immer das ICON vom spätesten Zeitpunkt nehmen (z.B. 18 Uhr statt 03 Uhr)
-    if (hour > tagMap[key].latestHour) {
-      tagMap[key].weather.icon = item.weather[0].icon
-      tagMap[key].latestHour = hour
-    }
-  }
-})
+            // Immer das ICON vom spätesten Zeitpunkt nehmen (z.B. 18 Uhr statt 03 Uhr)
+            if (hour > tagMap[key].latestHour) {
+              tagMap[key].weather.icon = item.weather[0].icon
+              tagMap[key].latestHour = hour
+            }
+          }
+        })
 
-daily.value = Object.values(tagMap)
-  .map(day => ({
-    dt: day.dt,
-    max: day.max,
-    min: day.min,
-    weather: day.weather
-  }))
-  .slice(0, 5)
+        daily.value = Object.values(tagMap)
+          .map(day => ({
+            dt: day.dt,
+            max: day.max,
+            min: day.min,
+            weather: day.weather
+          }))
+          .slice(0, 5)
 
 
         // 3) Reverse-Geocoding für Ortsname
@@ -239,8 +214,12 @@ daily.value = Object.values(tagMap)
 <style scoped>
 /* Global */
 /* Global */
-* { box-sizing: border-box; }
-html, body {
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -269,8 +248,10 @@ main {
 }
 
 .widget {
-  background: rgba(255, 255, 255, 0.25); /* Glasiger Effekt: Weiße Farbe mit 25% Deckkraft */
-  backdrop-filter: blur(20px); /* Stärkere Unschärfe */
+  background: rgba(255, 255, 255, 0.25);
+  /* Glasiger Effekt: Weiße Farbe mit 25% Deckkraft */
+  backdrop-filter: blur(20px);
+  /* Stärkere Unschärfe */
   -webkit-backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 1.5rem;
@@ -280,8 +261,10 @@ main {
   flex-direction: column;
   align-items: center;
   justify-content: space-around;
-  border: 1px solid rgba(255, 255, 255, 0.3); /* Leichter, transparenter Rand */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  /* Leichter, transparenter Rand */
 }
+
 .navbar {
   position: sticky;
   top: 0;
@@ -306,8 +289,10 @@ main {
 
 .flag {
   width: 32px;
-  margin-right: 0.85rem;
+  margin-left: 0.85rem;
+  /* Abstand NACH LINKS, damit Platz zum Titel entsteht */
 }
+
 
 .name {
   font-size: 1.35rem;
@@ -374,7 +359,8 @@ main {
   background: linear-gradient(135deg, rgba(106, 183, 255, 0.6), rgba(0, 122, 255, 0.6));
   color: white;
   grid-column: span 2;
-  backdrop-filter: blur(20px); /* Auch hier Unschärfe anwenden */
+  backdrop-filter: blur(20px);
+  /* Auch hier Unschärfe anwenden */
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
@@ -398,7 +384,8 @@ main {
 /* Wochenübersicht Widget */
 .weekly-forecast-widget {
   grid-column: span 2;
-  background: rgba(255, 255, 255, 0.25); /* Auch hier glasig machen */
+  background: rgba(255, 255, 255, 0.25);
+  /* Auch hier glasig machen */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -433,11 +420,13 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* Jetzt in der Mitte */
+  justify-content: center;
+  /* Jetzt in der Mitte */
   gap: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
+
 .sun-times-widget:hover,
 .wind-widget:hover,
 .Luftfeuchtigkeits-widget:hover {
@@ -459,7 +448,8 @@ main {
 .detail-item {
   font-size: 1rem;
   color: #333;
-  background: rgba(255, 255, 255, 0.3); /* Mehr Transparenz */
+  background: rgba(255, 255, 255, 0.3);
+  /* Mehr Transparenz */
   padding: 0.6rem 1rem;
   border-radius: 12px;
   display: flex;
@@ -468,39 +458,40 @@ main {
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   width: 100%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03); /* Leichterer Schatten */
-  border: 1px solid rgba(255, 255, 255, 0.4); /* Transparenter Rand */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  /* Leichterer Schatten */
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  /* Transparenter Rand */
 }
-
 
 /*
 .luftdruck-widget {
-  min-height: 180px;
-  padding: 1.5rem;
-  text-align: center;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(240, 244, 255, 0.25));
-  border-radius: 20px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  min-height: 180px;
+  padding: 1.5rem;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(240, 244, 255, 0.25));
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .luftdruck-widget:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-6px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
 }
 
 .luftdruck-widget h2 {
-  font-size: 1.2rem;
-  color: #007aff;
-  font-weight: 700;
+  font-size: 1.2rem;
+  color: #007aff;
+  font-weight: 700;
 }
 */
 
@@ -515,25 +506,31 @@ main {
 
 
 }
+
 @media (max-width: 480px) {
   .navbar {
     padding: 0.4rem 0.6rem;
   }
+
   .flag {
     width: 24px;
   }
+
   .name {
     font-size: 1.1rem;
   }
+
   .tab {
     font-size: 0.85rem;
     padding: 0.2rem 0.5rem;
   }
+
   .widget-title {
     font-size: 1.4rem;
   }
 
 }
+
 .error-wrapper {
   position: fixed;
   top: 50%;
@@ -555,7 +552,4 @@ main {
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
-
-
-
 </style>
