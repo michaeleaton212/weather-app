@@ -80,8 +80,11 @@
     <span>{{ current.main.humidity }} %</span>
   </div>
 </div>
+<<<<<<< HEAD
 <!-- Luftdruck Widget -->
 <!-- 
+=======
+>>>>>>> 1020909434d80831f17b31124e7ed4ba956202a3
 Luftdruck Widget
 <div class="widget luftdruck-widget glass" v-if="current">
   <h2>Luftdruck</h2>
